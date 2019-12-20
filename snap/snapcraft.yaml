@@ -1,0 +1,98 @@
+name: hdrview
+base: core18
+version: 'latest'
+summary: HDRView
+description: |
+  HDRView is a simple research-oriented high-dynamic range image viewer with an emphasis on examining and comparing images, and including minimalistic tonemapping capabilities.
+
+grade: stable
+confinement: strict
+
+parts:
+  desktop-gtk2:
+    build-packages:
+      - build-essential
+      - libgtk2.0-dev
+    make-parameters:
+      - FLAVOR=gtk2
+    plugin: make
+    source: https://github.com/ubuntu/snapcraft-desktop-helpers.git
+    source-subdir: gtk
+    stage-packages:
+      - libxkbcommon0
+      - ttf-ubuntu-font-family
+      - dmz-cursor-theme
+      - light-themes
+      - adwaita-icon-theme
+      - gnome-themes-standard
+      - shared-mime-info
+      - libgtk2.0-0
+      - libgdk-pixbuf2.0-0
+      - libglib2.0-bin
+      - libgtk2.0-bin
+      - unity-gtk2-module
+      - locales-all
+      - libappindicator1
+      - xdg-user-dirs
+      - ibus-gtk
+      - libibus-1.0-5
+  hdrview:
+    plugin: cmake
+    after: [desktop-gtk2]
+    source: https://bitbucket.org/wkjarosz/hdrview.git
+    source-commit:  "8436cf9"
+    configflags: ["-DCMAKE_INSTALL_PREFIX=/usr", "-DCMAKE_BUILD_TYPE=Release"]
+    override-pull: |
+      snapcraftctl pull
+      sed -i 's|icon-512.png|icon-1024.png|' CMakeLists.txt
+      convert -scale 96x96 resources/icon-512.png resources/icon-96.png 
+      convert -scale 48x48 resources/icon-512.png resources/icon-48.png 
+      convert -scale 24x24 resources/icon-512.png resources/icon-24.png
+    override-build: |
+      snapcraftctl build
+      sed -i 's|Icon=hdrview.png|Icon=${SNAP}/usr/share/icons/hicolor/512x512/apps/hdrview.png|' $SNAPCRAFT_PART_INSTALL/usr/share/applications/hdrview.desktop
+    build-packages:
+      - build-essential
+      - zlib1g-dev
+      - libx11-dev
+      - libxrandr-dev
+      - libxinerama-dev
+      - libxcursor-dev
+      - libgl1-mesa-dev
+      - libxi-dev
+      - imagemagick
+    stage-packages:
+      - libgl1
+      - libglvnd0
+      - libglx0
+      - libx11-6
+      - libxau6
+      - libxcb1
+      - libxcursor1
+      - libxdmcp6
+      - libxext6
+      - libxfixes3
+      - libxinerama1
+      - libxrandr2
+      - libxrender1
+      - libxxf86vm1
+      - libgl1-mesa-dri
+      - zenity
+
+apps:
+  hdrview:
+    command: desktop-launch $SNAP/usr/bin/HDRView
+    desktop: usr/share/applications/hdrview.desktop
+    environment:
+      LIBGL_DRIVERS_PATH: $SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/dri
+      LD_LIBRARY_PATH: $LD_LIBRARY_PATH:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/mesa:$SNAP/usr/lib/$SNAPCRAFT_ARCH_TRIPLET/mesa-egl:$LIBGL_DRIVERS_PATH:/var/lib/snapd/lib/gl
+    plugs:
+      - x11
+      - opengl
+      - home
+      - removable-media
+      - mount-observe
+      - gsettings
+      - desktop
+      - desktop-legacy
+
